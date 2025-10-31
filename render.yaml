@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: tgl-api
+    env: docker
+    region: oregon
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /docs
+    envVars:
+      - key: RENDER_API_KEY
+        sync: false
