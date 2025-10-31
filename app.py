@@ -101,11 +101,13 @@ def check_auth(auth: Optional[str]):
 
 
 # -------- Routes --------
-@app.get("/health", tags=["default"])
-def health():
-    return {"ok": True, "service": "tgl-render-api", "version": app.version}
 
-
+@app.get("/health/auth", tags=["default"])
+def health_auth():
+    key = API_KEY or ""
+    masked = (key[:1] + "*"*(len(key)-2) + key[-1:]) if key else ""
+    return {"ok": True, "env_var_present": bool(key), "key_length": len(key), "preview": masked}
+    
 @app.post("/render/triad", tags=["default"])
 def render_triad(payload: TriadPayload, Authorization: Optional[str] = Header(None)):
     # auth
