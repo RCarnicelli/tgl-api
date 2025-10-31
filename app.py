@@ -1,3 +1,8 @@
+from fastapi.security import HTTPBearer
+from fastapi.openapi.utils import get_openapi
+
+security = HTTPBearer()
+
 from fastapi import FastAPI, HTTPException, Header, Response, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
