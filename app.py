@@ -124,6 +124,65 @@ def health_auth():
     
 @app.post("/render/triad", tags=["default"])
 def render_triad(payload: TriadPayload, Authorization: Optional[str] = Header(None)):
+    @app.post("/render/tetrad", tags=["default"])
+def render_tetrad(payload: TetradPayload, Authorization: Optional[str] = Header(None)):
+    check_auth(Authorization)
+
+    if payload.scale_mode and payload.scale_mode not in MODES:
+        raise HTTPException(400, f"scale_mode inválido. Use: {', '.join(MODES.keys())}")
+
+    try:
+        voicing = generate_tetrad_voicing(
+            root=payload.root,
+            quality=payload.quality,
+            strings=payload.strings,
+            inversion=payload.inversion,
+            spread=payload.spread,
+            start_fret=payload.start_fret,
+        )
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+
+    if payload.output == "ascii":
+        ascii_text = render_ascii_grid(
+            voicing=voicing,
+            start_fret=payload.start_fret,
+            chord_root=payload.root,
+            quality=payload.quality,
+            scale_mode=payload.scale_mode,
+            highlight_scale=payload.highlight_scale,
+            show_all_scale=payload.show_all_scale,
+        )
+        return {"ok": True, "content_type": "text/plain", "ascii": ascii_text}
+
+    svg = render_svg_fretboard(
+        voicing=voicing,
+        start_fret=payload.start_fret,
+        chord_root=payload.root,
+        quality=payload.quality,
+        scale_mode=payload.scale_mode,
+        highlight_scale=payload.highlight_scale,
+        show_all_scale=payload.show_all_scale,
+        width=payload.width,
+        height=payload.height,
+    )
+
+    if payload.output == "svg":
+        return Response(content=svg, media_type="image/svg+xml")
+
+    if payload.output == "png":
+        try:
+            import cairosvg
+        except Exception:
+            raise HTTPException(500, "PNG requer CairoSVG")
+        png_bytes = cairosvg.svg2png(
+            bytestring=svg.encode("utf-8"),
+            output_width=payload.width,
+            output_height=payload.height,
+        )
+        return Response(content=png_bytes, media_type="image/png")
+
+    raise HTTPException(400, "output inválido. Use: svg|png|ascii")
     # auth
     check_auth(Authorization)
 
