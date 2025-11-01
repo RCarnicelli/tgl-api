@@ -72,6 +72,19 @@ app.openapi = custom_openapi
 
 # -------- Models --------
 class TriadPayload(BaseModel):
+    class TetradPayload(BaseModel):
+    root: str = Field("C")
+    quality: str = Field("maj7", description="maj7|min7|7|m7b5|dim7")
+    strings: Tuple[int,int,int,int] = Field((1,2,3,4), description="4 cordas (topo→base)")
+    inversion: int = Field(0, ge=0, le=3)
+    spread: Optional[str] = Field(None, description="None|drop2|drop3")
+    start_fret: int = Field(0, ge=0, le=18)
+    scale_mode: Optional[str] = None
+    highlight_scale: bool = True
+    show_all_scale: bool = False
+    output: str = Field("svg", description="svg|png|ascii")
+    width: int = 420
+    height: int = 520
     root: str = Field("C", description="Tônica: C, C#, D, ... (sustenidos preferidos)")
     quality: str = Field("maj", description="maj|min|dim|aug")
     strings: Tuple[int, int, int] = Field(
