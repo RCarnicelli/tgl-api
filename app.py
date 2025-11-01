@@ -20,6 +20,7 @@ from fastapi.openapi.utils import get_openapi
 # Núcleo musical/visual
 from tgl_core import (
     generate_triad_voicing,
+    generate_tetrad_voicing,   # <--- novo
     render_svg_fretboard,
     render_ascii_grid,
     MODES,
