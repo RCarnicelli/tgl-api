@@ -191,4 +191,56 @@ def render_svg_fretboard(voicing, start_fret, chord_root, quality, scale_mode, h
   {markers_svg}
 </svg>"""
     return svg
+# --------- TÉTRADES ---------
+TETRAD_INTERVALS = {
+    "maj7": [0, 4, 7, 11],
+    "min7": [0, 3, 7, 10],
+    "7":    [0, 4, 7, 10],   # dominante
+    "m7b5": [0, 3, 6, 10],   # meio-diminuto (ø)
+    "dim7": [0, 3, 6, 9],    # diminuto
+}
 
+def tetrad_pitches(root: str, quality: str, inversion: int = 0):
+    if quality not in TETRAD_INTERVALS:
+        raise ValueError("quality deve ser: maj7|min7|7|m7b5|dim7")
+    root_idx = note_to_idx(root)
+    ints = TETRAD_INTERVALS[quality]
+    pcs = [(root_idx + x) % 12 for x in ints]  # [1,3,5,7]
+    for _ in range(inversion % 4):
+        pcs = pcs[1:] + pcs[:1]
+    return pcs  # 4 PCs
+
+def assign_to_strings_k(pcs, strings, order_top_to_bottom=True):
+    s_sorted = tuple(sorted(strings))
+    seq = pcs[:] if order_top_to_bottom else list(reversed(pcs))
+    if len(seq) != len(s_sorted):
+        raise ValueError("número de cordas deve = número de vozes")
+    return list(zip(s_sorted, seq))  # [(string, pc),...]
+
+def apply_spread_k(mapping, spread: str | None):
+    if not spread: return mapping
+    V = list(mapping)  # top→bottom
+    n = len(V)
+    if n == 3:
+        # já implementado em triads; mantém compatibilidade
+        if spread.lower() == "drop2": return [V[0], V[2], V[1]]
+        if spread.lower() == "drop3": return [V[2], V[0], V[1]]
+    if n == 4:
+        # convenção clássica (top→bottom = V1 alto ... V4 baixo)
+        if spread.lower() == "drop2":
+            # 2ª voz (de cima) cai para a base
+            return [V[0], V[2], V[3], V[1]]
+        if spread.lower() == "drop3":
+            # 3ª voz (de cima) cai para a base
+            return [V[0], V[1], V[3], V[2]]
+    return mapping
+
+def generate_tetrad_voicing(root: str, quality: str, strings: tuple[int,int,int,int],
+                            inversion: int, spread: str | None, start_fret: int):
+    pcs = tetrad_pitches(root, quality, inversion)
+    mapping = assign_to_strings_k(pcs, strings, True)
+    mapping = apply_spread_k(mapping, spread)
+    frets = choose_frets_for_mapping(mapping, start_fret)
+    voicing = { s: None for s in range(1,7) }
+    voicing.update(frets)
+    return voicing
