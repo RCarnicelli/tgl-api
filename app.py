@@ -3,42 +3,30 @@ from fretboardgtr.fretboard import Fretboard
 import io
 import matplotlib.pyplot as plt
 
-app = FastAPI(title="🎸 TGL API - Fretboard Generator")
+app = FastAPI(title="🎸 TGL API - Fretboard v0.2.4")
 
 @app.get("/")
-def home():
+def root():
     return {
-        "message": "🎸 TGL API rodando com sucesso!",
+        "message": "🎸 TGL API rodando com fretboardgtr 0.2.4!",
         "rotas": {
-            "/plot/{modulo}": "Gera a imagem da escala/acorde/modo especificado. Ex: /plot/C major scale",
-            "/plot/{modulo}?posicao=5": "Escolhe a posição no braço (1–12).",
-        },
+            "/plot/C_major_scale": "Exemplo: gera escala maior de C",
+            "/plot/A_minor_pentatonic": "Exemplo: escala pentatônica de A",
+            "/plot/E7": "Exemplo: acorde E7"
+        }
     }
 
-@app.get("/test")
-def test_fretboard():
-    fb = Fretboard(tuning="EADGBE")
-    diagram = fb.plot("C major scale", position=5)
-    return {"status": "ok", "diagram": str(diagram)}
-
 @app.get("/plot/{modulo}")
-def plot_fretboard(modulo: str, posicao: int = 5):
-    """
-    Exemplo de uso:
-      /plot/C major scale
-      /plot/A minor pentatonic?posicao=8
-      /plot/G7?posicao=3
-    """
+def plot_modulo(modulo: str):
     fb = Fretboard(tuning="EADGBE")
 
     try:
-        fig = fb.plot(modulo, position=posicao)
+        fig = fb.plot(modulo.replace("_", " "))
     except Exception as e:
-        return {"erro": f"Não foi possível gerar o diagrama para '{modulo}': {e}"}
+        return {"erro": str(e)}
 
     buf = io.BytesIO()
     fig.savefig(buf, format="png", bbox_inches="tight")
     plt.close(fig)
     buf.seek(0)
-
     return Response(content=buf.read(), media_type="image/png")
