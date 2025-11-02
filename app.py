@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from fretboardgtr import Fretboard
+from fretboardgtr.fretboard import FretBoard
+from fretboardgtr.notes_creators import ScaleFromName
 
 app = FastAPI()
 
@@ -11,11 +12,20 @@ def root():
 
 @app.get("/test")
 def test_fretboard():
-    fb = Fretboard(tuning="EADGBE")
-    diagram = fb.plot("C major scale", position=5)
+    # Cria o braço da guitarra padrão
+    fb = FretBoard()
+
+    # Cria escala de Dó maior (C Ionian)
+    scale = ScaleFromName(root="C", mode="Ionian").build()
+
+    # Adiciona as notas da escala ao braço
+    fb.add_notes(scale=scale)
+
+    # Exporta o diagrama para string (SVG)
+    diagram_svg = fb.export("fretboard.svg", format="svg")
+
     return {
         "status": "ok",
-        "scale": "C major",
-        "position": 5,
-        "diagram": str(diagram)
+        "scale": "C major (Ionian)",
+        "diagram": str(diagram_svg)
     }
