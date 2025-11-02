@@ -8,6 +8,18 @@ app = FastAPI(
     title="ADV Guitar Lab",
     description="API para geração de diagramas de acordes e escalas de guitarra."
 )
+from fastapi import FastAPI
+from fretboardgtr.guitar import Fretboard   # ✅ import corrigido
+
+app = FastAPI()
+
+# 👇 Adicione daqui pra baixo
+@app.get("/test")
+def test_fretboard():
+    fb = Fretboard(tuning="EADGBE")
+    diagram = fb.plot("C major scale", position=5)
+    return {"status": "ok", "diagram": str(diagram)}
+# 👆 Até aqui
 
 @app.get("/", response_class=HTMLResponse)
 def home():
