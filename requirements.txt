@@ -1,4 +1,4 @@
 fastapi==0.115.0
 uvicorn==0.30.1
-fretboardgtr==0.2.7
+fretboardgtr==0.2.8
 matplotlib==3.9.2
