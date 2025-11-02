@@ -1,62 +1,52 @@
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
-from fretboardgtr import Fretboard
 import matplotlib.pyplot as plt
-import io
-import base64
+import io, base64
 
 app = FastAPI(
-    title="Guitar Diagram API",
-    description="API para gerar diagramas de guitarra com escalas e acordes.",
-    version="1.0.0"
+    title="Guitar Diagram API (Render Safe)",
+    description="Gera diagramas simples do braço da guitarra via Matplotlib",
+    version="1.1.0"
 )
 
-# ---------- Função auxiliar ----------
-def generate_diagram(img_func):
-    """Gera o gráfico, converte pra base64 e retorna"""
-    buf = io.BytesIO()
-    plt.tight_layout()
-    plt.savefig(buf, format="png", bbox_inches="tight", dpi=200)
-    plt.close()
-    buf.seek(0)
-    encoded = base64.b64encode(buf.read()).decode("utf-8")
-    return encoded
+# Afinação padrão
+TUNING = ['E', 'A', 'D', 'G', 'B', 'E']
 
-
-# ---------- Rota principal: Escalas ----------
-@app.get("/fretboard/scale")
-def get_scale(
-    tonic: str = Query("C", description="Nota tônica (ex: C, D#, F, G...)"),
-    mode: str = Query("major", description="Modo ou tipo de escala (major, minor, dorian, mixolydian etc.)"),
-    start_fret: int = Query(0, description="Traste inicial (0-12)")
-):
-    try:
-        fb = Fretboard(tuning="EADGBE", start_fret=start_fret)
-        fb.scale(f"{tonic} {mode}")
-        fb.show()
-        img = generate_diagram(fb.show)
-        return JSONResponse(content={"scale": f"{tonic} {mode}", "start_fret": start_fret, "image_base64": img})
-    except Exception as e:
-        return JSONResponse(status_code=400, content={"error": str(e)})
-
-
-# ---------- Rota para acordes ----------
-@app.get("/fretboard/chord")
-def get_chord(
-    chord: str = Query("Cmaj7", description="Nome do acorde (ex: Cmaj7, Gm7, D9...)"),
-    position: int = Query(0, description="Traste inicial (0-12)")
-):
-    try:
-        fb = Fretboard(tuning="EADGBE", start_fret=position)
-        fb.chord(chord)
-        fb.show()
-        img = generate_diagram(fb.show)
-        return JSONResponse(content={"chord": chord, "position": position, "image_base64": img})
-    except Exception as e:
-        return JSONResponse(status_code=400, content={"error": str(e)})
-
-
-# ---------- Home ----------
 @app.get("/")
 def root():
-    return {"message": "🎸 Guitar Diagram API ativa! Use /fretboard/scale ou /fretboard/chord."}
+    return {"message": "🎸 API ativa! Use /diagram?note=A&fret=5"}
+
+@app.get("/diagram")
+def diagram(note: str = Query("C"), fret: int = Query(3)):
+    """Desenha uma nota no braço da guitarra"""
+    fig, ax = plt.subplots(figsize=(6, 2))
+
+    # Desenha 6 cordas e 7 trastes
+    for s in range(6):
+        ax.plot([0, 6], [s, s], color='black', linewidth=0.8)
+    for f in range(7):
+        ax.plot([f, f], [0, 5], color='gray', linewidth=0.6)
+
+    # Posição da nota
+    ax.scatter(fret, 2, s=300, color='orange', zorder=3)
+    ax.text(fret, 2.1, note, ha='center', va='bottom', fontsize=11, fontweight='bold')
+
+    ax.set_xlim(-0.2, 6.2)
+    ax.set_ylim(-0.5, 5.5)
+    ax.set_yticks(range(6))
+    ax.set_yticklabels(reversed(TUNING))
+    ax.axis('off')
+
+    # Converter para base64
+    buf = io.BytesIO()
+    plt.tight_layout()
+    plt.savefig(buf, format="png", dpi=200)
+    plt.close(fig)
+    buf.seek(0)
+    img_b64 = base64.b64encode(buf.read()).decode("utf-8")
+
+    return JSONResponse(content={
+        "note": note,
+        "fret": fret,
+        "image_base64": img_b64
+    })
