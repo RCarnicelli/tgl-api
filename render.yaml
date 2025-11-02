@@ -9,3 +9,5 @@ services:
     envVars:
       - key: RENDER_API_KEY
         sync: false
+        buildCommand: pip install -r requirements.txt
+
