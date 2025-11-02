@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Query
 from fastapi.responses import HTMLResponse
-from fretboardgtr.fretboard import Fretboard
+from fretboardgtr import Fretboard
 import io, base64
 import matplotlib.pyplot as plt
 
