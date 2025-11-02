@@ -1,8 +1,13 @@
 FROM python:3.11-slim
 
+# Evita mensagens interativas e melhora performance
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
+# Dependências do sistema necessárias para o fretboardgtr e CairoSVG
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libcairo2-dev \
     pkg-config \
@@ -11,9 +16,15 @@ RUN apt-get update && apt-get install -y \
     build-essential \
  && rm -rf /var/lib/apt/lists/*
 
+# Copia dependências do Python
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
+# Instala as libs Python (incluindo fretboardgtr)
+RUN pip install --upgrade pip \
+ && pip install --no-cache-dir -r requirements.txt
+
+# Copia o resto da aplicação
 COPY . .
 
+# Define o comando padrão do container
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "10000"]
